@@ -14,27 +14,27 @@ day_of_week = datetime.today().weekday()
 day_names = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
 today_day_name = day_names[day_of_week]
 
-print(f"Dnes je {today_day_name}, {datetime.today().strftime('%A, %d. %B %Y')}.")
+print(f"Today is {today_day_name}, {datetime.today().strftime('%A, %d. %B %Y')}.")
 
 # Function to check if the event was already sent
 def was_event_sent(event_id):
     result = event_id in sent_events
-    print(f"Kontrolujem, či už bol event '{event_id}' poslaný: {'Áno' if result else 'Nie'}.")
+    print(f"Checking if the event '{event_id}' has already been sent: {'Yes' if result else 'No'}.")
     return result
 
 # Function to send a message to Telegram
 def send_telegram_message(message):
-    print(f"Odosielam správu do Telegramu:\n{message}")
+    print(f"Sending message to Telegram:\n{message}")
     response = requests.post(
         f'https://api.telegram.org/bot{TOKEN}/sendMessage',
         data={'chat_id': CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
     )
-    print(f"Telegram odpoveď: {response.status_code} - {response.json()}")
+    print(f"Telegram response: {response.status_code} - {response.json()}")
     return response.json()
 
 # Function to delete a message from Telegram
 def delete_telegram_message(message_id):
-    print(f"Odstraňujem správu s ID: {message_id}")
+    print(f"Deleting message with ID: {message_id}")
     response = requests.post(
         f'https://api.telegram.org/bot{TOKEN}/deleteMessage',
         data={'chat_id': CHAT_ID, 'message_id': message_id}
@@ -45,14 +45,14 @@ def delete_telegram_message(message_id):
 try:
     with open('sass_events.json', 'r') as file:
         data = json.load(file)
-        print(f"Načítal som {len(data)} eventov zo súboru sass_events.json.")
+        print(f"Loaded {len(data)} events from the file sass_events.json.")
 except FileNotFoundError:
-    print("Chyba: Súbor 'sass_events.json' neexistuje.")
+    print("Error: The file 'sass_events.json' does not exist.")
     data = []
 
 # Get the current date
 today = datetime.today().strftime('%d. %b')
-print(f"Dnešný dátum: {today}")
+print(f"Today's date: {today}")
 
 # Process each event and check if it's for today
 for event in data:
@@ -60,15 +60,15 @@ for event in data:
     event_day = event.get('day', 'Unknown day')
     event_id = event.get('title', 'Unknown title')  # Use title as identifier for simplicity
 
-    print(f"Spracovávam event: {event_id} (dátum: {start_date}, deň: {event_day})")
+    print(f"Processing event: {event_id} (date: {start_date}, day: {event_day})")
 
     # Check if the event is today and on the correct day of the week
     if start_date == today and event_day == today_day_name:
-        print(f"Event '{event_id}' je naplánovaný na dnes ({today_day_name}, {today}).")
+        print(f"Event '{event_id}' is scheduled for today ({today_day_name}, {today}).")
 
         # Check if the event was already sent
         if was_event_sent(event_id):
-            print(f"Event '{event_id}' už bol poslaný. Preskakujem.")
+            print(f"Event '{event_id}' has already been sent. Skipping.")
             continue
 
         # Prepare the message
@@ -91,23 +91,23 @@ for event in data:
             message += f"\n🔖 *Subline*: {subline}"
 
         # Print the message to the console
-        print(f"Pripravená správa pre event '{event_id}':\n{message}\n")
+        print(f"Prepared message for event '{event_id}':\n{message}\n")
 
         # Send the message to Telegram
         response = send_telegram_message(message)
         if response.get('ok'):
             message_id = response['result']['message_id']
-            print(f"Správa bola úspešne odoslaná. ID správy: {message_id}")
+            print(f"Message sent successfully. Message ID: {message_id}")
             # Add the event and message ID to the sent_events dictionary
             sent_events[event_id] = message_id
         else:
-            print(f"Chyba pri odosielaní správy. Odozva: {response}")
+            print(f"Error sending message. Response: {response}")
 
     else:
-        print(f"Event '{event.get('title', 'Unknown title')}' nie je naplánovaný na dnes. Preskakujem.")
+        print(f"Event '{event.get('title', 'Unknown title')}' is not scheduled for today. Skipping.")
 
 # Function to remove outdated messages (to be implemented based on your requirements)
 def remove_outdated_messages():
     # Example: Remove messages older than 1 day
-    print("Odstraňovanie zastaralých správ...")
+    print("Removing outdated messages...")
     pass  # Implement your own logic here
