@@ -6,25 +6,25 @@ class SassSpider(scrapy.Spider):
         'https://sassvienna.com/programm',
     ]
 
-    # Scrapy settings for automatic saving to a JSON file
+    # Scrapy nastavenie pre automatické ukladanie do JSON súboru
     custom_settings = {
         'FEEDS': {
-            'sass_events.json': {  # Name of the output file
-                'format': 'json',   # File format
-                'overwrite': True,  # Overwrite the file with each run
-                'indent': 4,        # Pretty JSON formatting
+            'sass_events.json': {  # Názov výstupného súboru
+                'format': 'json',   # Formát súboru
+                'overwrite': True,  # Prepísať súbor pri každom spustení
+                'indent': 4,        # Pekné formátovanie JSON
             },
         },
     }
 
     def parse(self, response):
-        self.log(f"Processing page: {response.url}")
+        self.log(f"Spracúvam stránku: {response.url}")
 
-        # Find all events on the page
+        # Nájde všetky eventy na stránke
         events = response.xpath('//div[@class="events"]/div[contains(@class, "event")]')
 
         for event in events:
-            # Extract event data
+            # Extrahovanie dát o evente
             day = event.xpath('.//div[@class="date"]//span[@class="day"]/strong/text()').get()
             start_date = event.xpath('.//div[@class="date"]//span[@class="start_date"]/text()').get()
             start_time = event.xpath('.//div[@class="time"]//span[@class="start_time"]/text()').get()
@@ -36,10 +36,10 @@ class SassSpider(scrapy.Spider):
             link = event.xpath('.//a[@class="eventlink"]/@href').get()
             full_link = response.urljoin(link)
 
-            # Default location (if not otherwise specified on the event page)
+            # Predvolená lokácia (ak nie je iná uvedená na stránke udalosti)
             default_location = 'SASS Music Club, Karlsplatz 1, 1010 Wien'
 
-            # Following the link to the event's detailed page
+            # Sledovanie odkazu na detailnú stránku eventu
             yield response.follow(full_link, callback=self.parse_event_details, meta={
                 'day': day,
                 'start_date': start_date,
@@ -49,23 +49,23 @@ class SassSpider(scrapy.Spider):
                 'subline': subline if subline else '',
                 'lineup': lineup_cleaned,
                 'link': full_link,
-                'location': default_location  # Default location
+                'location': default_location  # Predvolená lokácia
             })
 
     def parse_event_details(self, response):
-        # Retrieve event data from the previous step
+        # Získanie dát o evente z predošlého kroku
         event_data = response.meta
 
-        # Attempt to extract the location from the page (if specified)
+        # Pokus o extrakciu lokácie zo stránky (ak je uvedená)
         location = response.xpath('//p[contains(text(), "SASS Music Club")]/text()').get(event_data['location'])
 
-        # Update the location if it was found
+        # Aktualizácia lokácie, ak bola nájdená
         event_data['location'] = location.strip() if location else event_data['location']
 
-        # Remove unnecessary fields added by Scrapy
+        # Odstránenie nepotrebných polí, ktoré pridáva Scrapy
         filtered_event_data = {k: v for k, v in event_data.items() if k not in [
             'depth', 'download_timeout', 'download_slot', 'download_latency'
         ]}
 
-        # Save the processed data to a JSON file
+        # Uloženie spracovaných dát do JSON súboru
         yield filtered_event_data
